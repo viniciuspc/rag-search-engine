@@ -1,4 +1,6 @@
 import argparse
+import json
+import os
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -11,7 +13,25 @@ def main() -> None:
 
     match args.command:
         case "search":
-            print(f"Searching for: {args.query}")
+            query = args.query
+            print(f"Searching for: {query}")
+            with open("data/movies.json", 'r') as f:
+                movies = json.load(f)
+                
+            results_list = []
+            
+            for movie in movies["movies"]:
+                title = movie["title"]
+                if query in title:
+                    results_list.append(title)
+            
+            if len(results_list) == 0:
+                print("No result found.")
+                return
+            
+            for i in range(5):
+                print(f"{i+1}. {results_list[i]}")
+            
         case _:
             parser.print_help()
 
