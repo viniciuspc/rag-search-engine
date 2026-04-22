@@ -1,6 +1,6 @@
 import argparse
 import json
-from text_processing import preprocess_text
+from text_processing import tokenize, read_stopwords
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -19,12 +19,16 @@ def main() -> None:
                 movies = json.load(f)
                 
             results_list = []
+            stopwords = read_stopwords()
+            query_tokens = tokenize(query, stopwords)
             
             for movie in movies["movies"]:
                 title = movie["title"]
-                if preprocess_text(query) in preprocess_text(title):
+                
+                title_tokens = tokenize(title, stopwords)
+                if has_matching_token(query_tokens, title_tokens):
                     results_list.append(title)
-            
+                
             if len(results_list) == 0:
                 print("No result found.")
                 return
@@ -35,6 +39,13 @@ def main() -> None:
         case _:
             parser.print_help()
             
+            
+def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
+    for query_token in query_tokens:
+        for title_token in title_tokens:
+            if query_token in title_token:
+                return True
+    return False
 
 
 if __name__ == "__main__":
