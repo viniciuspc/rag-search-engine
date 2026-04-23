@@ -1,4 +1,5 @@
 import string
+from nltk.stem import PorterStemmer
 
 def preprocess_text(text) -> str:
     processed_text = text.lower()
@@ -17,7 +18,7 @@ def tokenize(text: str, stopwords: list[str]) -> list[str]:
     fileterd_tokens = []
     for token in tokens:
         if should_add_token(token, stopwords):
-            fileterd_tokens.append(token)
+            fileterd_tokens.append(stem_token(token))
             
     return fileterd_tokens
 
@@ -31,6 +32,10 @@ def should_add_token(token: str, stopwords) -> bool:
             return False
         
     return True
+
+def stem_token(token: str) -> str:
+    stemmer = PorterStemmer()
+    return stemmer.stem(token)
 
 def read_stopwords() -> list[str]:
     with open("data/stopwords.txt", 'r') as f:
