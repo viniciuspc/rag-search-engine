@@ -1,6 +1,7 @@
 import argparse
 import json
 from text_processing import tokenize, read_stopwords
+from inverted_index import InvertedIndex
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -8,6 +9,9 @@ def main() -> None:
 
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
+    
+    build_parser = subparsers.add_parser("build", help="Build Inverted Index")
+    
 
     args = parser.parse_args()
 
@@ -35,6 +39,13 @@ def main() -> None:
             
             for i in range(min(len(results_list), 5)):
                 print(f"{i+1}. {results_list[i]}")
+        case "build":
+            invertded_index = InvertedIndex()
+            invertded_index.build()
+            invertded_index.save()
+            
+            docs = invertded_index.get_documents("merida")
+            print(f"First document for token 'merida' = {docs[0]}")
             
         case _:
             parser.print_help()
