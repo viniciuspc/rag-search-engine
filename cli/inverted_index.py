@@ -1,8 +1,7 @@
 import os
-
 import json
 from text_processing import tokenize, read_stopwords
-from pickle import dump
+from pickle import dump, load
 
 class InvertedIndex:
     index: dict[str, set[int]] = {}
@@ -19,7 +18,8 @@ class InvertedIndex:
                 self.index[token].add(doc_id)
                 
     def get_documents(self, term: str) -> list[int]:
-        return sorted(self.index[term.lower()])
+        doc_ids = self.index.get(term, set())
+        return sorted(list(doc_ids))
     
     def build(self):
         with open("data/movies.json", 'r') as f:
@@ -46,5 +46,16 @@ class InvertedIndex:
             
         with open(os.path.join("/", *[dest_dir, "docmap.pkl"]), "+w") as f:
             dump(self.docmap, f.buffer)
+            
+    def load(self):
+        src_dir = os.path.abspath("cache")
+        index_file_path = os.path.join("/", *[src_dir, "index.pkl"])
+        
+        with open(index_file_path, "+rb") as f:
+            self.index = load(f)
+        
+        docmap_file_path = os.path.join("/", *[src_dir, "docmap.pkl"])
+        with open(docmap_file_path, "+rb") as f:
+            self.docmap = load(f)
             
             

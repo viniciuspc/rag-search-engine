@@ -10,7 +10,7 @@ def main() -> None:
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
     
-    build_parser = subparsers.add_parser("build", help="Build Inverted Index")
+    subparsers.add_parser("build", help="Build Inverted Index")
     
 
     args = parser.parse_args()
@@ -21,31 +21,41 @@ def main() -> None:
             print(f"Searching for: {query}")
             with open("data/movies.json", 'r') as f:
                 movies = json.load(f)
+            
+            invertded_index = InvertedIndex()
+            
+            try:
+                invertded_index.load()
+            except FileNotFoundError:
+                print("Index not created yet. Run build first.")
+                return
                 
             results_list = []
             stopwords = read_stopwords()
             query_tokens = tokenize(query, stopwords)
             
-            for movie in movies["movies"]:
-                title = movie["title"]
+            for query_token in query_tokens:
+                documents = invertded_index.get_documents(query_token)
                 
-                title_tokens = tokenize(title, stopwords)
-                if has_matching_token(query_tokens, title_tokens):
-                    results_list.append(title)
+                spaces_remaining = 5 - len(results_list)
+                
+                for document_id in documents[0:spaces_remaining]:
+                    results_list.append(document_id)
+                    
+                if len(results_list) >= 5:
+                    break
                 
             if len(results_list) == 0:
                 print("No result found.")
                 return
             
-            for i in range(min(len(results_list), 5)):
-                print(f"{i+1}. {results_list[i]}")
+            for document_id in results_list[0:5]:
+                movie_title = invertded_index.docmap[document_id]["title"]
+                print(f"{document_id}. {movie_title}")
         case "build":
             invertded_index = InvertedIndex()
             invertded_index.build()
             invertded_index.save()
-            
-            docs = invertded_index.get_documents("merida")
-            print(f"First document for token 'merida' = {docs[0]}")
             
         case _:
             parser.print_help()
