@@ -2,14 +2,17 @@ import os
 import json
 from text_processing import tokenize, read_stopwords
 from pickle import dump, load
+from collections import Counter
 
 class InvertedIndex:
     index: dict[str, set[int]] = {}
     docmap: dict[int, dict[str, str]] = {}
+    term_frequencies: dict[int, Counter] = {}
     
     stopwords = read_stopwords()
     
     def __add_document(self, doc_id: int, text: str):
+        
         tokens = tokenize(text, stopwords=self.stopwords)
         for token in tokens:
             if token not in self.index:
@@ -17,9 +20,22 @@ class InvertedIndex:
             else:
                 self.index[token].add(doc_id)
                 
+        self.term_frequencies[doc_id] = Counter(tokens)
+                
     def get_documents(self, term: str) -> list[int]:
         doc_ids = self.index.get(term, set())
         return sorted(list(doc_ids))
+    
+    def get_tf(self, doc_id: int, term: str) -> int:
+        tokens = tokenize(term, self.stopwords)
+        if len(tokens) > 1:
+            raise Exception("Term has to much tokens. Make sure the torm have only one token.")
+        
+        if doc_id not in self.term_frequencies:
+            raise Exception(f"doc_id {doc_id} not found in term frequencies {self.term_frequencies}")
+        
+        tf = self.term_frequencies[doc_id][tokens[0]]
+        return tf
     
     def build(self):
         with open("data/movies.json", 'r') as f:
@@ -47,6 +63,9 @@ class InvertedIndex:
         with open(os.path.join("/", *[dest_dir, "docmap.pkl"]), "+w") as f:
             dump(self.docmap, f.buffer)
             
+        with open(os.path.join("/", *[dest_dir, "term_frequencies.pkl"]), "+w") as f:
+            dump(self.term_frequencies, f.buffer)
+            
     def load(self):
         src_dir = os.path.abspath("cache")
         index_file_path = os.path.join("/", *[src_dir, "index.pkl"])
@@ -57,5 +76,9 @@ class InvertedIndex:
         docmap_file_path = os.path.join("/", *[src_dir, "docmap.pkl"])
         with open(docmap_file_path, "+rb") as f:
             self.docmap = load(f)
+            
+        term_frequencies_path = os.path.join("/", *[src_dir, "term_frequencies.pkl"])
+        with open(term_frequencies_path, "+rb") as f:
+            self.term_frequencies = load(f)
             
             
