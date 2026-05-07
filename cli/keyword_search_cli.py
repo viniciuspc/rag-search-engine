@@ -1,5 +1,5 @@
 import argparse
-import json
+import math
 from text_processing import tokenize, read_stopwords
 from inverted_index import InvertedIndex
 
@@ -12,9 +12,12 @@ def main() -> None:
     
     subparsers.add_parser("build", help="Build Inverted Index")
     
-    tf_parser = subparsers.add_parser("tf", help="Build Inverted Index")
+    tf_parser = subparsers.add_parser("tf", help="Get term frequency from doc_id and term")
     tf_parser.add_argument("doc_id", type=int, help="Document to get the term frequency")
     tf_parser.add_argument("term", type=str, help="Term to get the frequency")
+    
+    idf_parser = subparsers.add_parser("idf", help="Get Inverse Document Frequency")
+    idf_parser.add_argument("term", type=str, help="Term to get the frequency")
 
     args = parser.parse_args()
 
@@ -71,6 +74,34 @@ def main() -> None:
             
             tf = invertded_index.get_tf(doc_id, term)
             print(tf)
+            
+        case "idf":
+            term = args.term
+            
+            invertded_index = InvertedIndex()
+            
+            try:
+                invertded_index.load()
+            except FileNotFoundError:
+                print("Index not created yet. Run build first.")
+                return
+            
+            total_doc_count = len(invertded_index.docmap)
+            
+            stopwords = read_stopwords()
+            tokens = tokenize(term, stopwords)
+            
+            if len(tokens) != 1:
+                raise ValueError("term must be a single token")
+            token = tokens[0]
+            
+            term_match_doc_count = len(invertded_index.get_documents(token))
+            
+            idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+            
+            print(f"Query toknes: {tokens}")
+            print(f"total_doc_count: {total_doc_count}, term_match_doc_count: {term_match_doc_count}, div: {(total_doc_count + 1.0) / (term_match_doc_count + 1.0)}")
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         
             
         case _:

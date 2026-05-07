@@ -14,7 +14,7 @@ def remove_punctioation(text: str) -> str:
 
 def tokenize(text: str, stopwords: list[str]) -> list[str]:
     text = preprocess_text(text)
-    tokens = text.split(" ")
+    tokens = text.split()
     fileterd_tokens = []
     for token in tokens:
         if should_add_token(token, stopwords):
