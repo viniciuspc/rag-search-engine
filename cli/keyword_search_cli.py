@@ -86,21 +86,8 @@ def main() -> None:
                 print("Index not created yet. Run build first.")
                 return
             
-            total_doc_count = len(invertded_index.docmap)
+            idf = invertded_index.get_idf(term)
             
-            stopwords = read_stopwords()
-            tokens = tokenize(term, stopwords)
-            
-            if len(tokens) != 1:
-                raise ValueError("term must be a single token")
-            token = tokens[0]
-            
-            term_match_doc_count = len(invertded_index.get_documents(token))
-            
-            idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
-            
-            print(f"Query toknes: {tokens}")
-            print(f"total_doc_count: {total_doc_count}, term_match_doc_count: {term_match_doc_count}, div: {(total_doc_count + 1.0) / (term_match_doc_count + 1.0)}")
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         
             

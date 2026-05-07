@@ -1,5 +1,6 @@
 import os
 import json
+import math
 from text_processing import tokenize, read_stopwords
 from pickle import dump, load
 from collections import Counter
@@ -36,6 +37,15 @@ class InvertedIndex:
         
         tf = self.term_frequencies[doc_id][tokens[0]]
         return tf
+    
+    def get_idf(self, term: str) -> float:
+        tokens = tokenize(term, self.stopwords)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count + 1) / (term_doc_count + 1))
     
     def build(self):
         with open("data/movies.json", 'r') as f:
