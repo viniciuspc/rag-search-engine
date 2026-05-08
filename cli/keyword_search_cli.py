@@ -1,5 +1,4 @@
 import argparse
-import math
 from text_processing import tokenize, read_stopwords
 from inverted_index import InvertedIndex
 
@@ -18,6 +17,13 @@ def main() -> None:
     
     idf_parser = subparsers.add_parser("idf", help="Get Inverse Document Frequency")
     idf_parser.add_argument("term", type=str, help="Term to get the frequency")
+    
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get TF-IDF for document id and term")
+    tfidf_parser.add_argument("doc_id", type=str, help="Document ID to get the TF-IDF")
+    tfidf_parser.add_argument("term", type=str, help="Term to get the TF-IDF")
+    
+    bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
+    bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
 
     args = parser.parse_args()
 
@@ -89,6 +95,38 @@ def main() -> None:
             idf = invertded_index.get_idf(term)
             
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+            
+        case "tfidf":
+            doc_id = int(args.doc_id)
+            term = args.term
+            
+            invertded_index = InvertedIndex()
+            
+            try:
+                invertded_index.load()
+            except FileNotFoundError:
+                print("Index not created yet. Run build first.")
+                return
+            
+            tf_idf = invertded_index.get_tfidf(doc_id, term)
+            
+            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}")
+            
+        case "bm25idf":
+            
+            term = args.term
+            
+            invertded_index = InvertedIndex()
+            
+            try:
+                invertded_index.load()
+            except FileNotFoundError:
+                print("Index not created yet. Run build first.")
+                return
+            
+            bm25idf = invertded_index.get_bm25_idf(term)
+            
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
         
             
         case _:

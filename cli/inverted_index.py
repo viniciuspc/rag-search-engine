@@ -47,6 +47,24 @@ class InvertedIndex:
         term_doc_count = len(self.index[token])
         return math.log((doc_count + 1) / (term_doc_count + 1))
     
+    def get_tfidf(self, doc_id: int, term: str) -> float:
+        tf = self.get_tf(doc_id, term)
+        idf = self.get_idf(term)
+        
+        return tf * idf
+    
+    def get_bm25_idf(self, term: str) -> float:
+        tokens = tokenize(term, self.stopwords)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        
+        bm25_idf = math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
+        
+        return bm25_idf
+    
     def build(self):
         with open("data/movies.json", 'r') as f:
             movies = json.load(f)
