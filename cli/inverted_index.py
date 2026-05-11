@@ -4,6 +4,7 @@ import math
 from text_processing import tokenize, read_stopwords
 from pickle import dump, load
 from collections import Counter
+from constants import BM25_K1
 
 class InvertedIndex:
     index: dict[str, set[int]] = {}
@@ -65,6 +66,13 @@ class InvertedIndex:
         
         return bm25_idf
     
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
+        tf = self.get_tf(doc_id, term)
+        
+        bm25_tf = (tf * (k1 + 1)) / (tf + k1)
+        return bm25_tf
+        
+    
     def build(self):
         with open("data/movies.json", 'r') as f:
             movies = json.load(f)
@@ -108,5 +116,18 @@ class InvertedIndex:
         term_frequencies_path = os.path.join("/", *[src_dir, "term_frequencies.pkl"])
         with open(term_frequencies_path, "+rb") as f:
             self.term_frequencies = load(f)
+            
+            
+def bm25_tf_command(doc_id, term, k1=BM25_K1):
+    invertded_index = InvertedIndex()
+            
+    try:
+        invertded_index.load()
+    except FileNotFoundError:
+        print("Index not created yet. Run build first.")
+        return
+    
+    return invertded_index.get_bm25_tf(doc_id, term, k1)
+            
             
             
