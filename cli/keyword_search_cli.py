@@ -1,7 +1,7 @@
 import argparse
-from text_processing import tokenize, read_stopwords
+from text_processing import tokenize
 from inverted_index import InvertedIndex, bm25_tf_command
-from constants import BM25_K1
+from search_utils import BM25_K1, BM25_B, load_stopwords
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -31,6 +31,7 @@ def main() -> None:
     bm25_tf_parser.add_argument("doc_id", type=int, help="Document ID")
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+    bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
     args = parser.parse_args()
 
@@ -48,7 +49,7 @@ def main() -> None:
                 return
                 
             results_list = []
-            stopwords = read_stopwords()
+            stopwords = load_stopwords()
             query_tokens = tokenize(query, stopwords)
             
             for query_token in query_tokens:
@@ -138,8 +139,9 @@ def main() -> None:
             doc_id = int(args.doc_id)
             term = args.term
             k1 = args.k1
+            b = args.b
             
-            bm25tf = bm25_tf_command(doc_id, term, k1)
+            bm25tf = bm25_tf_command(doc_id, term, k1, b)
             
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
             

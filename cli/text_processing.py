@@ -36,9 +36,3 @@ def should_add_token(token: str, stopwords) -> bool:
 def stem_token(token: str) -> str:
     stemmer = PorterStemmer()
     return stemmer.stem(token)
-
-def read_stopwords() -> list[str]:
-    with open("data/stopwords.txt", 'r') as f:
-                file_content = f.read()
-                
-    return file_content.splitlines()

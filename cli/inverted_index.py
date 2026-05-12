@@ -1,21 +1,29 @@
 import os
-import json
 import math
-from text_processing import tokenize, read_stopwords
+from text_processing import tokenize
 from pickle import dump, load
 from collections import Counter
-from constants import BM25_K1
+from search_utils import BM25_B, BM25_K1, CACHE_DIR, load_movies, load_stopwords
 
 class InvertedIndex:
     index: dict[str, set[int]] = {}
     docmap: dict[int, dict[str, str]] = {}
     term_frequencies: dict[int, Counter] = {}
+    doc_lengths: dict[int, int] = {}
     
-    stopwords = read_stopwords()
+    index_path = os.path.join(CACHE_DIR, "index.pkl")
+    docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
+    term_frequencies_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
+    doc_lengths_path = os.path.join(CACHE_DIR, "doc_lengths.pkl") 
+    
+    stopwords = load_stopwords()
     
     def __add_document(self, doc_id: int, text: str):
         
         tokens = tokenize(text, stopwords=self.stopwords)
+        
+        self.doc_lengths[doc_id] = len(tokens)
+        
         for token in tokens:
             if token not in self.index:
                 self.index[token] = set({doc_id})
@@ -23,6 +31,18 @@ class InvertedIndex:
                 self.index[token].add(doc_id)
                 
         self.term_frequencies[doc_id] = Counter(tokens)
+        
+    def __get_avg_doc_length(self) -> float:
+        if(len(self.doc_lengths) == 0):
+            return 0
+        
+        sum_doc_length = 0
+        
+        for doc_lengh in self.doc_lengths.values():
+            sum_doc_length += doc_lengh
+            
+        return sum_doc_length / len(self.doc_lengths)
+        
                 
     def get_documents(self, term: str) -> list[int]:
         doc_ids = self.index.get(term, set())
@@ -66,18 +86,20 @@ class InvertedIndex:
         
         return bm25_idf
     
-    def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B):
         tf = self.get_tf(doc_id, term)
+        avg_doc_length = self.__get_avg_doc_length()
         
-        bm25_tf = (tf * (k1 + 1)) / (tf + k1)
+        length_norm = 1 - b + b * (self.doc_lengths[doc_id] / avg_doc_length)
+        
+        bm25_tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_tf
         
     
     def build(self):
-        with open("data/movies.json", 'r') as f:
-            movies = json.load(f)
+        movies = load_movies()
             
-        for movie in movies["movies"]:
+        for movie in movies:
             movie_dict = {
                 "id": movie["id"],
                 "title": movie["title"],
@@ -91,34 +113,37 @@ class InvertedIndex:
             self.__add_document(doc_id, text=f"{movie['title']} {movie['description']}" )
     
     def save(self):
-        dest_dir = os.path.abspath("cache")
+        dest_dir = CACHE_DIR
         os.makedirs(dest_dir, exist_ok=True)
-        with open(os.path.join("/", *[dest_dir, "index.pkl"]), "+w") as f:
+        print(f"Saving cache to: {CACHE_DIR}")
+        with open(self.index_path, "+w") as f:
             dump(self.index, f.buffer)
             
-        with open(os.path.join("/", *[dest_dir, "docmap.pkl"]), "+w") as f:
+        with open(self.docmap_path, "+w") as f:
             dump(self.docmap, f.buffer)
             
-        with open(os.path.join("/", *[dest_dir, "term_frequencies.pkl"]), "+w") as f:
+        with open(self.term_frequencies_path, "+w") as f:
             dump(self.term_frequencies, f.buffer)
             
+        with open(self.doc_lengths_path, "w+") as f:
+            dump(self.doc_lengths, f.buffer)
+            
     def load(self):
-        src_dir = os.path.abspath("cache")
-        index_file_path = os.path.join("/", *[src_dir, "index.pkl"])
         
-        with open(index_file_path, "+rb") as f:
+        with open(self.index_path, "+rb") as f:
             self.index = load(f)
         
-        docmap_file_path = os.path.join("/", *[src_dir, "docmap.pkl"])
-        with open(docmap_file_path, "+rb") as f:
+        with open(self.docmap_path, "+rb") as f:
             self.docmap = load(f)
             
-        term_frequencies_path = os.path.join("/", *[src_dir, "term_frequencies.pkl"])
-        with open(term_frequencies_path, "+rb") as f:
+        with open(self.term_frequencies_path, "+rb") as f:
             self.term_frequencies = load(f)
+        
+        with open(self.doc_lengths_path, "+rb") as f:
+            self.doc_lengths = load(f)
             
             
-def bm25_tf_command(doc_id, term, k1=BM25_K1):
+def bm25_tf_command(doc_id, term, k1=BM25_K1, b=BM25_B):
     invertded_index = InvertedIndex()
             
     try:
@@ -127,7 +152,7 @@ def bm25_tf_command(doc_id, term, k1=BM25_K1):
         print("Index not created yet. Run build first.")
         return
     
-    return invertded_index.get_bm25_tf(doc_id, term, k1)
+    return invertded_index.get_bm25_tf(doc_id, term, k1, b)
             
             
             
