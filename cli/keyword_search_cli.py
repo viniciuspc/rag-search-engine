@@ -1,7 +1,7 @@
 import argparse
 from text_processing import tokenize
-from inverted_index import InvertedIndex, bm25_tf_command
-from search_utils import BM25_K1, BM25_B, load_stopwords
+from inverted_index import InvertedIndex, bm25_tf_command, bm25_search_comand
+from search_utils import BM25_K1, BM25_B, DEFAULT_SEARCH_LIMIT, load_stopwords
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -32,6 +32,10 @@ def main() -> None:
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
     bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
+    
+    bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument("limit", type=int, nargs='?', default=DEFAULT_SEARCH_LIMIT, help="Tunable BM25 b parameter")
 
     args = parser.parse_args()
 
@@ -144,7 +148,26 @@ def main() -> None:
             bm25tf = bm25_tf_command(doc_id, term, k1, b)
             
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
+        
+        case "bm25search":
+            query = args.query
+            limit = args.limit
             
+            invertded_index = InvertedIndex()
+            
+            try:
+                invertded_index.load()
+            except FileNotFoundError:
+                print("Index not created yet. Run build first.")
+                return
+            
+            search = bm25_search_comand(query, limit)
+            
+            i = 1
+            for doc_id, score in search.items():
+                title = invertded_index.docmap[doc_id]["title"]
+                print(f"{i}. ({doc_id}) {title} - Score: {score:.2f}")
+                i += 1
             
         
             

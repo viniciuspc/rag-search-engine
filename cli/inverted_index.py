@@ -4,6 +4,7 @@ from text_processing import tokenize
 from pickle import dump, load
 from collections import Counter
 from search_utils import BM25_B, BM25_K1, CACHE_DIR, load_movies, load_stopwords
+from itertools import islice
 
 class InvertedIndex:
     index: dict[str, set[int]] = {}
@@ -86,7 +87,7 @@ class InvertedIndex:
         
         return bm25_idf
     
-    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B):
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B) -> float:
         tf = self.get_tf(doc_id, term)
         avg_doc_length = self.__get_avg_doc_length()
         
@@ -94,6 +95,37 @@ class InvertedIndex:
         
         bm25_tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_tf
+    
+    def bm25(self, doc_id, term) -> float:
+        bm25_tf = self.get_bm25_tf(doc_id, term)
+        bm25_idf = self.get_bm25_idf(term)
+        
+        return bm25_tf * bm25_idf
+    
+    def bm25_search(self, query: str, limit: int) -> dict[int, float]:
+        query_tokens = tokenize(query, self.stopwords)
+        
+        scores_dictionary: dict[int, float] = {}
+        
+        for query_token in query_tokens:
+            documents = self.get_documents(query_token)
+            
+            for document_id in documents:
+                doc_bm25 = self.bm25(document_id, query_token)
+                
+                if document_id in scores_dictionary:
+                    scores_dictionary[document_id] += doc_bm25
+                else:
+                    scores_dictionary[document_id] = doc_bm25
+                    
+        scores_dictionary = dict(sorted(
+            scores_dictionary.items(), 
+            key=lambda item: item[1], reverse=True)
+        )
+        
+        return dict(islice(scores_dictionary.items(), limit))
+        
+        
         
     
     def build(self):
@@ -153,6 +185,17 @@ def bm25_tf_command(doc_id, term, k1=BM25_K1, b=BM25_B):
         return
     
     return invertded_index.get_bm25_tf(doc_id, term, k1, b)
+
+def bm25_search_comand(query: str, limit: int = 5) -> dict[int, float]:
+    invertded_index = InvertedIndex()
+            
+    try:
+        invertded_index.load()
+    except FileNotFoundError:
+        print("Index not created yet. Run build first.")
+        return {}
+    
+    return invertded_index.bm25_search(query, limit)
             
             
             
