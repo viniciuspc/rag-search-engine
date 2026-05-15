@@ -14,6 +14,9 @@ def main():
     embed_text_parser.add_argument("text", type=str, help="Text to get the embedding")
     
     subparsers.add_parser("verify_embeddings", help="Verify the embeddings")
+    
+    embed_query_parser = subparsers.add_parser("embed_query", help="Embed a query using the model")
+    embed_query_parser.add_argument("query", type=str, help="Text to get the embedding")
 
     
     args = parser.parse_args()
@@ -26,6 +29,9 @@ def main():
             embed_text(text)
         case "verify_embeddings":
             verify_embeddings()
+        case "embed_query":
+            query = args.query
+            embed_text(query)
         case _:
             parser.print_help()
 
