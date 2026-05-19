@@ -1,7 +1,7 @@
 import os
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from search_utils import CACHE_DIR, load_movies
+from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT
 
 
 class SemanticSearch():
@@ -57,13 +57,39 @@ class SemanticSearch():
         
         # Build or rebuild embedding
         return self.build_embeddings(documents)
+    
+    def search(self, query, limit) -> list[dict]:
+        if self.embeddings is None or self.documents is None:
+            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
         
+        query_embds = self.generate_embedding(query)
+        similarity_score_doc = []
+        
+        for doc_idx in range(0,len(self.documents)):
+            doc = self.documents[doc_idx]
+            doc_embd = self.embeddings[doc_idx]
             
+            similarity_score = cosine_similarity(query_embds, doc_embd)
+            similarity_score_doc.append((similarity_score, doc))
         
+        similarity_score_doc = sorted(similarity_score_doc, key=lambda x: x[0], reverse=True)
         
+        top_results_limit = min(len(similarity_score_doc), limit)
+        top_results = []
+        
+        for top_idx in range(0, top_results_limit):
+            score, doc = similarity_score_doc[top_idx]
+            top_results.append(
+                {
+                    "score": score,
+                    "title": doc["title"],
+                    "description": doc["description"]
+                }
+            )
             
+        return top_results
         
-            
+        
         
 def verify_model():
     semantic_search = SemanticSearch()
@@ -101,4 +127,28 @@ def embed_query_text(query):
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Shape: {embedding.shape}")
     
+def cosine_similarity(vec1, vec2) -> float:
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
+
+def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    semantic_search = SemanticSearch()
+    
+    documents = load_movies()
+    
+    semantic_search.load_or_create_embeddings(documents)
+    
+    results = semantic_search.search(query, limit)
+    
+    for result_idx in range(0,len(results)):
+        result = results[result_idx]
+        print(f"{result_idx+1}. {result["title"]} (score: {result['score']:.4f})")
+        print(f"\t{result["description"]}")
+        print("")
         
