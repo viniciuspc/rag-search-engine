@@ -1,7 +1,7 @@
 import os
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE
+from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE
 
 
 class SemanticSearch():
@@ -152,13 +152,13 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
         print(f"\t{result["description"]}")
         print("")
 
-def chunk_command(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE):
+def chunk_command(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP_SIZE ):
     print(f"Chunking {len(text)} characters")
 
-    chunks = split_text_in_chunks(text, chunk_size)
+    chunks = split_text_in_chunks(text, chunk_size, overlap)
     print_chunks(chunks)
 
-def split_text_in_chunks(text: str, chunk_size: int) -> list[str]:
+def split_text_in_chunks(text: str, chunk_size: int, overlap: int) -> list[str]:
     words = text.split()
     chunks: list[str] = []
     
@@ -170,11 +170,11 @@ def split_text_in_chunks(text: str, chunk_size: int) -> list[str]:
     for _ in range(0, num_full_chunks):
         chunk = " ".join(words[first_idx:last_idx])
         chunks.append(chunk)
-        first_idx = last_idx
+        first_idx = last_idx - overlap
         last_idx += chunk_size
 
     if(remainder > 0):
-        last_idx = first_idx + remainder
+        last_idx = first_idx + remainder + overlap
         chunk = " ".join(words[first_idx:last_idx])
         chunks.append(chunk)
     
