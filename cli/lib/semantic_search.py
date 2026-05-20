@@ -1,4 +1,5 @@
 import os
+import re
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE
@@ -152,7 +153,11 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
         print(f"\t{result["description"]}")
         print("")
 
-def chunk_command(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP_SIZE ):
+def chunk_command(
+        text: str, 
+        chunk_size: int = DEFAULT_CHUNK_SIZE, 
+        overlap: int = DEFAULT_OVERLAP_SIZE 
+    ):
     print(f"Chunking {len(text)} characters")
 
     chunks = split_text_in_chunks(text, chunk_size, overlap)
@@ -176,6 +181,40 @@ def split_text_in_chunks(text: str, chunk_size: int, overlap: int) -> list[str]:
     if(remainder > 0):
         last_idx = first_idx + remainder + overlap
         chunk = " ".join(words[first_idx:last_idx])
+        chunks.append(chunk)
+    
+    return chunks
+
+def semantic_chunk_commnad(
+        text: str, 
+        chunk_size: int = DEFAULT_CHUNK_SIZE, 
+        overlap: int = DEFAULT_OVERLAP_SIZE 
+    ):
+    print(f"Semantically chunking {len(text)} characters")
+
+    chunks = semantic_split_text_in_chunks(text, chunk_size, overlap)
+
+    print_chunks(chunks)
+
+def semantic_split_text_in_chunks(text: str, chunk_size: int, overlap: int) -> list[str]:
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+
+    chunks: list[str] = []
+    
+    num_full_chunks = len(sentences) // chunk_size
+    remainder = len(sentences) % chunk_size
+
+    first_idx = 0
+    last_idx = chunk_size
+    for _ in range(0, num_full_chunks):
+        chunk = " ".join(sentences[first_idx:last_idx])
+        chunks.append(chunk)
+        first_idx = last_idx - overlap
+        last_idx += chunk_size
+
+    if(remainder > 0):
+        last_idx = first_idx + remainder + overlap
+        chunk = " ".join(sentences[first_idx:last_idx])
         chunks.append(chunk)
     
     return chunks
