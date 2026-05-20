@@ -1,7 +1,7 @@
 import os
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT
+from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE
 
 
 class SemanticSearch():
@@ -151,4 +151,42 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
         print(f"{result_idx+1}. {result["title"]} (score: {result['score']:.4f})")
         print(f"\t{result["description"]}")
         print("")
+
+def chunk_command(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE):
+    print(f"Chunking {len(text)} characters")
+
+    chunks = split_text_in_chunks(text, chunk_size)
+    print_chunks(chunks)
+
+def split_text_in_chunks(text: str, chunk_size: int) -> list[str]:
+    words = text.split()
+    chunks: list[str] = []
+    
+    num_full_chunks = len(words) // chunk_size
+    remainder = len(words) % chunk_size
+
+    first_idx = 0
+    last_idx = chunk_size
+    for _ in range(0, num_full_chunks):
+        chunk = " ".join(words[first_idx:last_idx])
+        chunks.append(chunk)
+        first_idx = last_idx
+        last_idx += chunk_size
+
+    if(remainder > 0):
+        last_idx = first_idx + remainder
+        chunk = " ".join(words[first_idx:last_idx])
+        chunks.append(chunk)
+    
+    return chunks
+
+
+def print_chunks(chunks: list[str]):
+    for chunk_idx in range(0, len(chunks)):
+        print(f"{chunk_idx+1}. {chunks[chunk_idx]}")
+
+
+    
+        
+
         
