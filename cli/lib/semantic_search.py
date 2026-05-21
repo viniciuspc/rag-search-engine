@@ -196,27 +196,17 @@ def semantic_chunk_commnad(
 
     print_chunks(chunks)
 
-def semantic_split_text_in_chunks(text: str, chunk_size: int, overlap: int) -> list[str]:
+def semantic_split_text_in_chunks(text: str, max_chunk_size: int, overlap: int) -> list[str]:
     sentences = re.split(r"(?<=[.!?])\s+", text)
-
-    chunks: list[str] = []
-    
-    num_full_chunks = len(sentences) // chunk_size
-    remainder = len(sentences) % chunk_size
-
-    first_idx = 0
-    last_idx = chunk_size
-    for _ in range(0, num_full_chunks):
-        chunk = " ".join(sentences[first_idx:last_idx])
-        chunks.append(chunk)
-        first_idx = last_idx - overlap
-        last_idx += chunk_size
-
-    if(remainder > 0):
-        last_idx = first_idx + remainder + overlap
-        chunk = " ".join(sentences[first_idx:last_idx])
-        chunks.append(chunk)
-    
+    chunks = []
+    i = 0
+    n_sentences = len(sentences)
+    while i < n_sentences:
+        chunk_sentences = sentences[i : i + max_chunk_size]
+        if chunks and len(chunk_sentences) <= overlap:
+            break
+        chunks.append(" ".join(chunk_sentences))
+        i += max_chunk_size - overlap
     return chunks
 
 
