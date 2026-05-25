@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.chunked_semantic_search import embed_chunks_command
+from lib.chunked_semantic_search import embed_chunks_command, search_chunked_command
 from lib.semantic_search import (
     chunk_command,
     embed_text,
@@ -85,6 +85,17 @@ def main():
     
     subparsers.add_parser("embed_chunks", help="Create embed chunks")
     
+    search_chunked_parser = subparsers.add_parser("search_chunked", help="Semantic search chunked")
+    search_chunked_parser.add_argument("query", type=str, help="Text to search")
+    search_chunked_parser.add_argument(
+        "--limit", 
+        type=int, 
+        nargs='?', 
+        default=DEFAULT_SEARCH_LIMIT, 
+        help="Number of documents to return", 
+        required=False
+    )
+    
     args = parser.parse_args()
 
     match args.command:
@@ -114,6 +125,10 @@ def main():
             semantic_chunk_commnad(text, max_chunk_size, overlap)
         case "embed_chunks":
             embed_chunks_command()
+        case "search_chunked":
+            query = args.query
+            limit = args.limit
+            search_chunked_command(query, limit)
         case _:
             parser.print_help()
 

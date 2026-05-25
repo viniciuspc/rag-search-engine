@@ -2,7 +2,7 @@ import os
 import re
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE
+from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, SCORE_PRECISION
 
 
 class SemanticSearch():
@@ -192,11 +192,11 @@ def semantic_chunk_commnad(
     ):
     print(f"Semantically chunking {len(text)} characters")
 
-    chunks = semantic_split_text_in_chunks(text, chunk_size, overlap)
+    chunks = semantic_chunk(text, chunk_size, overlap)
 
     print_chunks(chunks)
 
-def semantic_split_text_in_chunks(text: str, max_chunk_size: int, overlap: int) -> list[str]:
+def semantic_chunk(text: str, max_chunk_size: int, overlap: int) -> list[str]:
     sentences = re.split(r"(?<=[.!?])\s+", text)
     chunks = []
     i = 0
