@@ -6,8 +6,8 @@ from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_C
 
 
 class SemanticSearch():
-    def __init__(self) -> None:
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+        self.model = SentenceTransformer(model_name)
         self.embeddings = None
         self.documents = None
         self.document_map = {}
@@ -31,7 +31,7 @@ class SemanticSearch():
         for doc in documents:
             self.document_map[doc["id"]] = doc
             list_str_movies.append(f"{doc['title']}: {doc['description']}")
-            
+        
         self.embeddings = self.model.encode(list_str_movies, show_progress_bar=True)
         
         self.save()
