@@ -2,7 +2,7 @@ import os
 import re
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, SCORE_PRECISION
+from search_utils import CACHE_DIR, load_movies, DEFAULT_SEARCH_LIMIT, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE
 
 
 class SemanticSearch():
@@ -197,7 +197,7 @@ def semantic_chunk_commnad(
     print_chunks(chunks)
 
 def semantic_chunk(text: str, max_chunk_size: int, overlap: int) -> list[str]:
-    sentences = re.split(r"(?<=[.!?])\s+", text)
+    sentences = split_text_in_sentences(text)
     chunks = []
     i = 0
     n_sentences = len(sentences)
@@ -209,6 +209,33 @@ def semantic_chunk(text: str, max_chunk_size: int, overlap: int) -> list[str]:
         i += max_chunk_size - overlap
     return chunks
 
+def split_text_in_sentences(text: str) -> list[str]:
+    text = text.strip()
+    if len(text) == 0:
+        return []
+    
+    text_ends_with_ponctuation = (text.endswith(".") or 
+                                text.endswith("!") or 
+                                text.endswith("?"))
+    
+    if len(text) == 1 and not text_ends_with_ponctuation:
+        return [text]
+    
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    sentences_striped = strip_sentences(sentences)
+
+    return sentences_striped
+
+def strip_sentences(sentences: list[str]) -> list[str]:
+    sentences_striped = []
+    
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) > 0:
+            sentences_striped.append(sentence)
+    
+    return sentences_striped
+    
 
 def print_chunks(chunks: list[str]):
     for chunk_idx in range(0, len(chunks)):
