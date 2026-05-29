@@ -14,7 +14,6 @@ class HybridSearch:
         self.document_map = {}
         for doc in documents:
             self.document_map[doc["id"]] = doc
-        
         self.semantic_search = ChunkedSemanticSearch()
         self.semantic_search.load_or_create_chunk_embeddings(documents)
 
@@ -47,6 +46,7 @@ class HybridSearch:
         
         for doc_id, keyword_score in keyword_results:
             if doc_id not in doc_scores:
+                doc_scores[doc_id] = {}
                 doc_scores[doc_id]["document"] = self.document_map[doc_id]
             doc_scores[doc_id]["keyword_score"] = normalized_scores[idx_scores]
             idx_scores += 1
@@ -54,14 +54,27 @@ class HybridSearch:
         for semantic_result in semantic_results:
             doc_id = semantic_result["id"]
             if doc_id not in doc_scores:
+                doc_scores[doc_id] = {}
                 doc_scores[doc_id]["document"] = self.document_map[doc_id]
             doc_scores[doc_id]["semantic_score"] = normalized_scores[idx_scores]
             idx_scores += 1
             
         for doc_id in doc_scores.keys():
-            keyword_score = doc_scores[doc_id]["keyword_score"]
-            semantic_score = doc_scores[doc_id]["semantic_score"]
-            doc_scores[doc_id]["hybrid_score"] = hybrid_score(bm25_score=keyword_score, semantic_score=semantic_score, alpha=alpha)
+            doc_score = doc_scores[doc_id]
+            keyword_score = 0.0
+            
+            if "keyword_score" in doc_score: 
+                keyword_score = doc_score["keyword_score"]
+            
+            semantic_score = 0.0
+            if "semantic_score" in doc_score:
+                semantic_score = doc_score["semantic_score"]
+            
+            doc_scores[doc_id]["hybrid_score"] = hybrid_score(
+                bm25_score=keyword_score, 
+                semantic_score=semantic_score, 
+                alpha=alpha
+            )
             
         doc_scores = dict(
             sorted(

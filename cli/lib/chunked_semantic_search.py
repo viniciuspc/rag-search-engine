@@ -135,11 +135,11 @@ class ChunkedSemanticSearch(SemanticSearch):
         top_results: list[SearchResult] = []
         
         for _ in range(0, top_results_limit):
-            doc_id, chunk_score = movie_to_score.popitem()
-            print(chunk_score)
-            doc = self.documents[doc_id]
+            movie_idx, chunk_score = movie_to_score.popitem()
+            
+            doc = self.documents[movie_idx]
             search_result = format_search_result(
-                doc_id=doc_id,
+                doc_id=doc["id"],
                 title=doc["title"],
                 document=doc["description"][:100],
                 score=chunk_score["score"],
