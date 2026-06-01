@@ -31,15 +31,18 @@ class HybridSearch:
         keyword_results = self._bm25_search(query, limit_with_buffer)
         semantic_results = self.semantic_search.search_chunks(query, limit_with_buffer)
         
-        scores: list[float] = []
+        keywords_scores: list[float] = []
         
         for _, keyword_score in keyword_results:
-            scores.append(keyword_score)
+            keywords_scores.append(keyword_score)
             
+        normalized_keyword_socores = normalize(keywords_scores)
+        
+        semantic_scores: list[float] = []
         for semantic_result in semantic_results:
-            scores.append(semantic_result["score"])
-            
-        normalized_scores = normalize(scores)
+            semantic_scores.append(semantic_result["score"])
+        
+        normalized_semantic_scores = normalize(semantic_scores)
         
         doc_scores = {}
         idx_scores = 0
@@ -48,15 +51,16 @@ class HybridSearch:
             if doc_id not in doc_scores:
                 doc_scores[doc_id] = {}
                 doc_scores[doc_id]["document"] = self.document_map[doc_id]
-            doc_scores[doc_id]["keyword_score"] = normalized_scores[idx_scores]
+            doc_scores[doc_id]["keyword_score"] = normalized_keyword_socores[idx_scores]
             idx_scores += 1
-            
+        
+        idx_scores = 0
         for semantic_result in semantic_results:
             doc_id = semantic_result["id"]
             if doc_id not in doc_scores:
                 doc_scores[doc_id] = {}
                 doc_scores[doc_id]["document"] = self.document_map[doc_id]
-            doc_scores[doc_id]["semantic_score"] = normalized_scores[idx_scores]
+            doc_scores[doc_id]["semantic_score"] = normalized_semantic_scores[idx_scores]
             idx_scores += 1
             
         for doc_id in doc_scores.keys():
