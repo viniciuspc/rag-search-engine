@@ -10,9 +10,19 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 def main():
+    
+    query = "briish bear"
+    content = f"""Fix any spelling errors in the user-provided movie search query below.
+        Correct only clear, high-confidence typos. Do not rewrite, add, remove, or reorder words.
+        Preserve punctuation and capitalization unless a change is required for a typo fix.
+        If there are no spelling errors, or if you're unsure, output the original query unchanged.
+        Output only the final query text, nothing else.
+        User query: "{query}"
+        """
+    
     response = client.models.generate_content(
               model="gemma-4-31b-it",
-              contents="Why is Boot.dev such a great place to learn about RAG? Use one paragraph maximum.",
+              contents=content,
           )
     
     print(response.text)

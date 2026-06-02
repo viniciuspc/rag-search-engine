@@ -6,6 +6,9 @@ from search_utils import (
     DEFAULT_ALPHA,
     RRF_K
 )
+from lib.spell_corrector import correct_spell
+from lib.query_rewriter import rewrite_query
+from lib.query_expander import expand_query
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -54,6 +57,12 @@ def main() -> None:
         help="Number of documents to return", 
         required=False
     )
+    rff_search_parser.add_argument(
+        "--enhance",
+        type=str,
+        choices=["spell", "rewrite", "expand"],
+        help="Query enhancement method",
+    )
 
     
     args = parser.parse_args()
@@ -72,7 +81,22 @@ def main() -> None:
             query = args.query
             k = args.k
             limit = args.limit
-            rrf_search_command(query, k, limit)
+            
+            method = args.enhance
+            
+            enhanced_query = query
+            if method == "spell":
+                enhanced_query = correct_spell(query)
+                print(f"Enhanced query ({method}): '{query}' -> '{enhanced_query}'\n")
+            elif method == "rewrite":
+                enhanced_query = rewrite_query(query)
+                print(f"Enhanced query ({method}): '{query}' -> '{enhanced_query}'\n")
+            elif method == "expand":
+                enhanced_query = expand_query(query)
+                print(f"Enhanced query ({method}): '{query}' -> '{enhanced_query}'\n")
+                
+            
+            rrf_search_command(enhanced_query, k, limit)
         case _:
             parser.print_help()
 
