@@ -1,4 +1,5 @@
 import os
+import time
 
 from inverted_index import InvertedIndex
 from .chunked_semantic_search import ChunkedSemanticSearch
@@ -8,6 +9,7 @@ from search_utils import (
     RRF_K,
     load_movies,
 )
+from .individual_re_ranker import calculate_rank
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -151,12 +153,6 @@ class HybridSearch:
             top_results.append(scores)
             
         return top_results
-        
-        
-        
-        
-        
-        
     
 def normalize_command(scores: list[float]):
     if len(scores) == 0:
@@ -230,6 +226,50 @@ def rrf_search_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT)
         print(f"   RRF Score: {result['rrf_score']:.4f}")
         print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
         print(f"   {result['document']['description'][:100]}...")
+        
+def rrf_search_rehank_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT):
+    print(f"Re-ranking top {limit} results using individual method...")
+    print(f"Reciprocal Rank Fusion Results for '{query}' (k={k}):")
+    
+    limit_multiplier = 5
+    sleep_time_in_seconds = 3
+    
+    movies = load_movies()
+    
+    hybrid_search = HybridSearch(documents=movies)
+    
+    results = hybrid_search.rrf_search(
+        query,
+        k,
+        limit * limit_multiplier
+    )
+    
+    for result in results:
+        llm_rank = calculate_rank(query, result["document"])
+        result["re_rank"] = llm_rank
+        time.sleep(sleep_time_in_seconds)
+        
+    results = sorted(
+                results, key=lambda x: x["re_rank"],
+                reverse=True
+            )[:limit]
+    
+    
+    for i, result in enumerate(results):
+        bm25_rank = format_rank(result, "keyword_rank")
+        
+        semantinc_rank = format_rank(result, "semantic_rank")
+        
+        re_rank = format_rank(result, "re_rank")
+        
+        print(f"\n{i+1}. {result["document"]["title"]}")
+        print(f"   Re-rank Score: {re_rank}/10")
+        print(f"   RRF Score: {result['rrf_score']:.4f}")
+        print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
+        print(f"   {result['document']['description'][:100]}...")
+        
+    
+        
         
 def format_rank(dictionary, key) -> str:
     rank = "-"

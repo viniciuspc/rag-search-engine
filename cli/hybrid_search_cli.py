@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybrid_search import normalize_command, weighted_search_command, rrf_search_command
+from lib.hybrid_search import normalize_command, weighted_search_command, rrf_search_command, rrf_search_rehank_command
 from search_utils import (
     DEFAULT_SEARCH_LIMIT,
     DEFAULT_ALPHA,
@@ -60,7 +60,13 @@ def main() -> None:
     rff_search_parser.add_argument(
         "--enhance",
         type=str,
-        choices=["spell", "rewrite", "expand"],
+        choices=["spell", "rewrite", "expand", "individual"],
+        help="Query enhancement method",
+    )
+    rff_search_parser.add_argument(
+        "--rerank-method",
+        type=str,
+        choices=["individual"],
         help="Query enhancement method",
     )
 
@@ -94,9 +100,12 @@ def main() -> None:
             elif method == "expand":
                 enhanced_query = expand_query(query)
                 print(f"Enhanced query ({method}): '{query}' -> '{enhanced_query}'\n")
-                
             
-            rrf_search_command(enhanced_query, k, limit)
+            rerank_method = args.rerank_method
+            if rerank_method == "individual":
+                rrf_search_rehank_command(enhanced_query, k, limit)
+            else:
+                rrf_search_command(enhanced_query, k, limit)
         case _:
             parser.print_help()
 
