@@ -1,5 +1,6 @@
 import os
 import time
+import json
 
 from inverted_index import InvertedIndex
 from .chunked_semantic_search import ChunkedSemanticSearch
@@ -7,9 +8,11 @@ from search_utils import (
     DEFAULT_SEARCH_LIMIT,
     DEFAULT_ALPHA,
     RRF_K,
+    LIMIT_MULTIPLIER,
     load_movies,
 )
 from .individual_re_ranker import calculate_rank
+from .batch_re_ranker import calculate_batch_rank
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -226,7 +229,6 @@ def rrf_search_rehank_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH
     print(f"Re-ranking top {limit} results using individual method...")
     print(f"Reciprocal Rank Fusion Results for '{query}' (k={k}):")
     
-    limit_multiplier = 5
     sleep_time_in_seconds = 1
     
     movies = load_movies()
@@ -237,7 +239,7 @@ def rrf_search_rehank_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH
     results = hybrid_search.rrf_search(
         query,
         k,
-        limit * limit_multiplier
+        limit * LIMIT_MULTIPLIER
     )
     
     calculating_index = 1
@@ -267,6 +269,52 @@ def rrf_search_rehank_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH
         print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
         print(f"   {result['document']['description'][:100]}...")
         
+
+def rrf_search_rehank_batch_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT):
+    print(f"Re-ranking top {limit} results using batch method...")
+    print(f"Reciprocal Rank Fusion Results for '{query}' (k={k}):")
+    
+    movies = load_movies()
+    
+    hybrid_search = HybridSearch(documents=movies)
+    
+    RE_RANK_FOR_UNKNOW_ID = 999
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        query,
+        k,
+        limit * LIMIT_MULTIPLIER
+    )
+    
+    doc_list_str = json.dumps(rrf_search_results)
+    
+    llm_ranks = calculate_batch_rank(query, doc_list_str)
+    
+    for rrf_search_result in rrf_search_results:
+        id = rrf_search_result["document"]["id"]
+        if(id in llm_ranks):
+            rrf_search_result["re_rank"] = llm_ranks.index(id) + 1
+        else:
+            rrf_search_result["re_rank"] = RE_RANK_FOR_UNKNOW_ID
+        
+    
+    
+    
+    results = sorted(
+                rrf_search_results, key=lambda x: x["re_rank"],
+                reverse=False
+            )[:limit]
+    
+    for i, result in enumerate(results):
+        bm25_rank = format_rank(result, "keyword_rank")
+        
+        semantinc_rank = format_rank(result, "semantic_rank")
+        
+        print(f"\n{i+1}. {result["document"]["title"]}")
+        print(f"   Re-rank Rank: {result['re_rank']}")
+        print(f"   RRF Score: {result['rrf_score']:.3f}")
+        print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
+        print(f"   {result['document']['description'][:100]}...")
     
         
         
