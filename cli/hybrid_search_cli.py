@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybrid_search import normalize_command, weighted_search_command, rrf_search_command, rrf_search_rehank_command, rrf_search_rehank_batch_command
+from lib.hybrid_search import normalize_command, weighted_search_command, rrf_search_command, rrf_search_rehank_command, rrf_search_rehank_batch_command, rrf_search_rehank_cross_encoder_command
 from search_utils import (
     DEFAULT_SEARCH_LIMIT,
     DEFAULT_ALPHA,
@@ -66,7 +66,7 @@ def main() -> None:
     rff_search_parser.add_argument(
         "--rerank-method",
         type=str,
-        choices=["individual", "batch"],
+        choices=["individual", "batch", "cross_encoder"],
         help="Query enhancement method",
     )
 
@@ -106,6 +106,8 @@ def main() -> None:
                 rrf_search_rehank_command(enhanced_query, k, limit)
             elif rerank_method == "batch":
                 rrf_search_rehank_batch_command(enhanced_query, k, limit)
+            elif rerank_method == "cross_encoder":
+                rrf_search_rehank_cross_encoder_command(enhanced_query, k, limit)
             else:
                 rrf_search_command(enhanced_query, k, limit)
         case _:

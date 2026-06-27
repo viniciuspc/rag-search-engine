@@ -13,6 +13,7 @@ from search_utils import (
 )
 from .individual_re_ranker import calculate_rank
 from .batch_re_ranker import calculate_batch_rank
+from sentence_transformers import CrossEncoder
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -312,6 +313,56 @@ def rrf_search_rehank_batch_command(query: str, k: int = RRF_K, limit = DEFAULT_
         
         print(f"\n{i+1}. {result["document"]["title"]}")
         print(f"   Re-rank Rank: {result['re_rank']}")
+        print(f"   RRF Score: {result['rrf_score']:.3f}")
+        print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
+        print(f"   {result['document']['description'][:100]}...")
+        
+def rrf_search_rehank_cross_encoder_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT):
+    print(f"Re-ranking top {limit} results using cross_encoder method...")
+    print(f"Reciprocal Rank Fusion Results for '{query}' (k={k}):")
+    
+    movies = load_movies()
+    
+    hybrid_search = HybridSearch(documents=movies)
+    
+    RE_RANK_FOR_UNKNOW_ID = 999
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        query,
+        k,
+        limit * LIMIT_MULTIPLIER
+    )
+    
+    pairs = []
+    
+    for rrf_search_result in rrf_search_results:
+            doc = rrf_search_result["document"]
+            pairs.append([query, f"{doc.get('title', '')} - {doc.get('description', '')}"])
+            
+    cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+    
+    # `predict` returns a list of numbers, one for each pair
+    scores = cross_encoder.predict(pairs)
+    
+    for i, score in enumerate(scores):
+        rrf_search_result = rrf_search_results[i]
+        rrf_search_result["re_rank"] = score
+        rrf_search_results[i] = rrf_search_result
+    
+    
+    
+    results = sorted(
+                rrf_search_results, key=lambda x: x["re_rank"],
+                reverse=True
+            )[:limit]
+    
+    for i, result in enumerate(results):
+        bm25_rank = format_rank(result, "keyword_rank")
+        
+        semantinc_rank = format_rank(result, "semantic_rank")
+        
+        print(f"\n{i+1}. {result["document"]["title"]}")
+        print(f"   Cross Encoder Score:: {result['re_rank']:.3f}")
         print(f"   RRF Score: {result['rrf_score']:.3f}")
         print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
         print(f"   {result['document']['description'][:100]}...")
