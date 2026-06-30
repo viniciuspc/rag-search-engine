@@ -43,11 +43,12 @@ def main() -> None:
         
         total_relevant = len(relevant_docs)
         recall = relevant_retrieved / total_relevant
-        
+        f1 = 2 * (precision * recall) / (precision + recall)
         
         
         print(f"    - Precision@{limit}: {precision:.4f}")
         print(f"    - Recall@{limit}: {recall:.4f}")
+        print(f"    - F1 Score: {f1:.4f}")
         print(f"    - Retrieved: {format_titles(retrieved_titles)}")
         print(f"    - Relevant: {format_titles(relevant_docs)}")
         
