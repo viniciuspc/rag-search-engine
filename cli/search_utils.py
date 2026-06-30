@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any, TypedDict
+from text_processing import preprocess_text
 
 class Movie(TypedDict):
     id: int
@@ -46,7 +47,7 @@ def load_movies() -> list[dict]:
 
 def load_stopwords() -> list[str]:
     with open(STOPWORDS_PATH, "r") as f:
-        return f.read().splitlines()
+        return [preprocess_text(word) for word in f.read().splitlines()]
     
 def format_search_result(
     doc_id: int, title: str, document: str, score: float, **metadata: Any

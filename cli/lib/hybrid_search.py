@@ -325,8 +325,6 @@ def rrf_search_rehank_cross_encoder_command(query: str, k: int = RRF_K, limit = 
     
     hybrid_search = HybridSearch(documents=movies)
     
-    RE_RANK_FOR_UNKNOW_ID = 999
-    
     rrf_search_results = hybrid_search.rrf_search(
         query,
         k,
@@ -375,3 +373,5 @@ def format_rank(dictionary, key) -> str:
         rank = f"{dictionary[key]}"
         
     return rank
+    
+    

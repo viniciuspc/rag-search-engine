@@ -50,14 +50,10 @@ class InvertedIndex:
         return sorted(list(doc_ids))
     
     def get_tf(self, doc_id: int, term: str) -> int:
-        tokens = tokenize(term, self.stopwords)
-        if len(tokens) > 1:
-            raise Exception("Term has to much tokens. Make sure the torm have only one token.")
-        
         if doc_id not in self.term_frequencies:
             raise Exception(f"doc_id {doc_id} not found in term frequencies {self.term_frequencies}")
         
-        tf = self.term_frequencies[doc_id][tokens[0]]
+        tf = self.term_frequencies[doc_id][term]
         return tf
     
     def get_idf(self, term: str) -> float:
@@ -76,12 +72,8 @@ class InvertedIndex:
         return tf * idf
     
     def get_bm25_idf(self, term: str) -> float:
-        tokens = tokenize(term, self.stopwords)
-        if len(tokens) != 1:
-            raise ValueError("term must be a single token")
-        token = tokens[0]
         doc_count = len(self.docmap)
-        term_doc_count = len(self.index[token])
+        term_doc_count =  len(self.index[term])
         
         bm25_idf = math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
         
@@ -148,30 +140,30 @@ class InvertedIndex:
         dest_dir = CACHE_DIR
         os.makedirs(dest_dir, exist_ok=True)
         print(f"Saving cache to: {CACHE_DIR}")
-        with open(self.index_path, "+w") as f:
-            dump(self.index, f.buffer)
+        with open(self.index_path, "wb") as f:
+            dump(self.index, f)
             
-        with open(self.docmap_path, "+w") as f:
-            dump(self.docmap, f.buffer)
+        with open(self.docmap_path, "wb") as f:
+            dump(self.docmap, f)
             
-        with open(self.term_frequencies_path, "+w") as f:
-            dump(self.term_frequencies, f.buffer)
+        with open(self.term_frequencies_path, "wb") as f:
+            dump(self.term_frequencies, f)
             
-        with open(self.doc_lengths_path, "w+") as f:
-            dump(self.doc_lengths, f.buffer)
+        with open(self.doc_lengths_path, "wb") as f:
+            dump(self.doc_lengths, f)
             
     def load(self):
         
-        with open(self.index_path, "+rb") as f:
+        with open(self.index_path, "rb") as f:
             self.index = load(f)
         
-        with open(self.docmap_path, "+rb") as f:
+        with open(self.docmap_path, "rb") as f:
             self.docmap = load(f)
             
-        with open(self.term_frequencies_path, "+rb") as f:
+        with open(self.term_frequencies_path, "rb") as f:
             self.term_frequencies = load(f)
         
-        with open(self.doc_lengths_path, "+rb") as f:
+        with open(self.doc_lengths_path, "rb") as f:
             self.doc_lengths = load(f)
             
             
