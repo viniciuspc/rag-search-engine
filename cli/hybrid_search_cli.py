@@ -85,6 +85,7 @@ def main() -> None:
             weighted_search_command(query, alpha, limit)
         case "rrf-search":
             query = args.query
+            print(f"Original Query: {query}")
             k = args.k
             limit = args.limit
             
@@ -100,6 +101,8 @@ def main() -> None:
             elif method == "expand":
                 enhanced_query = expand_query(query)
                 print(f"Enhanced query ({method}): '{query}' -> '{enhanced_query}'\n")
+                
+            print(f"Enhanced Query: {enhanced_query}")
             
             rerank_method = args.rerank_method
             if rerank_method == "individual":

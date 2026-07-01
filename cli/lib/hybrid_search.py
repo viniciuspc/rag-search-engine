@@ -14,6 +14,7 @@ from search_utils import (
 from .individual_re_ranker import calculate_rank
 from .batch_re_ranker import calculate_batch_rank
 from sentence_transformers import CrossEncoder
+from log_utils import log_results
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -150,6 +151,8 @@ class HybridSearch:
             ))
         
         top_results: list[dict] = [scores for _, scores in list(doc_scores.items())[:limit]]
+        
+        log_results("RRF Serach results", top_results)
             
         return top_results
     
@@ -347,7 +350,7 @@ def rrf_search_rehank_cross_encoder_command(query: str, k: int = RRF_K, limit = 
         rrf_search_result["re_rank"] = score
         rrf_search_results[i] = rrf_search_result
     
-    
+    log_results("Results after rerank", rrf_search_results)
     
     results = sorted(
                 rrf_search_results, key=lambda x: x["re_rank"],
