@@ -18,6 +18,8 @@ from log_utils import log_results
 from lib.rrf_evaluator import evaluate_rrf
 from lib.rag_agent import run_rag
 from lib.llm_sumarizer import summarize_results
+from lib.llm_citation_sumarizer import citation_results
+from lib.llm_question_answerer import answer_question
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -419,6 +421,52 @@ def summarize_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
         
     print("LLM Summary:")
     print(summary)
+    
+def citations_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    movies = load_movies()
+        
+    hybrid_search = HybridSearch(documents=movies)
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        query,
+        RRF_K,
+        limit
+    )
+    
+    formatted_results = format_results(rrf_search_results)
+    
+    summary = citation_results(query, formatted_results)
+    
+    print("Search Results:")
+    for result in rrf_search_results:
+        title = result["document"]["title"]
+        print(f"- {title}")
+        
+    print("LLM Answer:")
+    print(summary)
+    
+def question_command(question: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    movies = load_movies()
+        
+    hybrid_search = HybridSearch(documents=movies)
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        question,
+        RRF_K,
+        limit
+    )
+    
+    formatted_results = format_results(rrf_search_results)
+    
+    answer = answer_question(question, formatted_results)
+    
+    print("Search Results:")
+    for result in rrf_search_results:
+        title = result["document"]["title"]
+        print(f"- {title}")
+        
+    print("Answer:")
+    print(answer)
     
         
 def format_rank(dictionary, key) -> str:
