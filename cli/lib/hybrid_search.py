@@ -17,6 +17,7 @@ from sentence_transformers import CrossEncoder
 from log_utils import log_results
 from lib.rrf_evaluator import evaluate_rrf
 from lib.rag_agent import run_rag
+from lib.llm_sumarizer import summarize_results
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -395,6 +396,29 @@ def rag_command(query: str):
         
     print("RAG Response:")
     print(rag_response)
+    
+def summarize_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    movies = load_movies()
+        
+    hybrid_search = HybridSearch(documents=movies)
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        query,
+        RRF_K,
+        limit
+    )
+    
+    formatted_results = format_results(rrf_search_results)
+    
+    summary = summarize_results(query, formatted_results)
+    
+    print("Search Results:")
+    for result in rrf_search_results:
+        title = result["document"]["title"]
+        print(f"- {title}")
+        
+    print("LLM Summary:")
+    print(summary)
     
         
 def format_rank(dictionary, key) -> str:
