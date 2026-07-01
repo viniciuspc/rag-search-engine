@@ -69,6 +69,11 @@ def main() -> None:
         choices=["individual", "batch", "cross_encoder"],
         help="Query enhancement method",
     )
+    rff_search_parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="If this flag is provided, run LLM evaluation after the runnin RRF",
+    )
 
     
     args = parser.parse_args()
@@ -88,6 +93,7 @@ def main() -> None:
             print(f"Original Query: {query}")
             k = args.k
             limit = args.limit
+            evaluate = args.evaluate
             
             method = args.enhance
             
@@ -112,7 +118,7 @@ def main() -> None:
             elif rerank_method == "cross_encoder":
                 rrf_search_rehank_cross_encoder_command(enhanced_query, k, limit)
             else:
-                rrf_search_command(enhanced_query, k, limit)
+                rrf_search_command(enhanced_query, k, limit, evaluate)
         case _:
             parser.print_help()
 

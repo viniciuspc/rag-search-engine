@@ -15,6 +15,7 @@ from .individual_re_ranker import calculate_rank
 from .batch_re_ranker import calculate_batch_rank
 from sentence_transformers import CrossEncoder
 from log_utils import log_results
+from lib.rrf_evaluator import evaluate_rrf
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -208,7 +209,7 @@ def weighted_search_command(query: str, alpha: float = DEFAULT_ALPHA, limit: int
         print(f"   {result['document']['description'][:100]}...")
         
         
-def rrf_search_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT):
+def rrf_search_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT, evaluate: bool = False):
     movies = load_movies()
     
     hybrid_search = HybridSearch(documents=movies)
@@ -228,6 +229,9 @@ def rrf_search_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT)
         print(f"   RRF Score: {result['rrf_score']:.4f}")
         print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
         print(f"   {result['document']['description'][:100]}...")
+        
+    if evaluate:
+        evaluate_rrf_with_llm(query, results)
         
 def rrf_search_rehank_command(query: str, k: int = RRF_K, limit = DEFAULT_SEARCH_LIMIT):
     print(f"Re-ranking top {limit} results using individual method...")
@@ -376,5 +380,25 @@ def format_rank(dictionary, key) -> str:
         rank = f"{dictionary[key]}"
         
     return rank
+
+def evaluate_rrf_with_llm(query: str, results: list[dict]):
+    formatted_results: list[str] = []
+    for result in results:
+        doc = result["document"]
+        formatted_results.append(f"{doc["title"]}: {doc["description"]}")
+        
+    rrf_evaluations: list[int] = evaluate_rrf(query, formatted_results)
+    print_rrf_evaluation(results, rrf_evaluations)
+    
+def print_rrf_evaluation(results: list[dict], rrf_evaluations: list[int]):
+    if len(results) != len(rrf_evaluations):
+        raise ValueError("Results and rrf_evaluations length does not match")
+    
+    for i in range(0, len(results)):
+        title = results[i]["document"]["title"]
+        evaluation = rrf_evaluations[i]
+        
+        print(f"{i+1}. {title}: {evaluation}/3")
+    
     
     

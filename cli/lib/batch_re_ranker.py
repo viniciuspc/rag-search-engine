@@ -23,14 +23,3 @@ Ranking:"""
     result = generate_content(prompt)
     
     return json.loads(result) if result is not None else []
-    
-    
-def safe_float(val, default=None):
-    if val is None:
-        return default
-    try:
-        return float(val)
-    except (ValueError, TypeError):
-        # ValueError handles bad strings ('abc')
-        # TypeError handles bad types (None, lists, etc.)
-        return default
