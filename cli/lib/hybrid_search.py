@@ -16,6 +16,7 @@ from .batch_re_ranker import calculate_batch_rank
 from sentence_transformers import CrossEncoder
 from log_utils import log_results
 from lib.rrf_evaluator import evaluate_rrf
+from lib.rag_agent import run_rag
 
 class HybridSearch:
     def __init__(self, documents: list[dict]) -> None:
@@ -371,8 +372,30 @@ def rrf_search_rehank_cross_encoder_command(query: str, k: int = RRF_K, limit = 
         print(f"   RRF Score: {result['rrf_score']:.3f}")
         print(f"   BM25 Rank: {bm25_rank}, Semantic Rank: {semantinc_rank}")
         print(f"   {result['document']['description'][:100]}...")
-    
         
+def rag_command(query: str):
+    movies = load_movies()
+        
+    hybrid_search = HybridSearch(documents=movies)
+    
+    rrf_search_results = hybrid_search.rrf_search(
+        query,
+        RRF_K,
+        DEFAULT_SEARCH_LIMIT
+    )
+    
+    formatted_results = format_results(rrf_search_results)
+    
+    rag_response = run_rag(query, formatted_results)
+    
+    print("Search Results:")
+    for result in rrf_search_results:
+        title = result["document"]["title"]
+        print(f"- {title}")
+        
+    print("RAG Response:")
+    print(rag_response)
+    
         
 def format_rank(dictionary, key) -> str:
     rank = "-"
@@ -382,13 +405,18 @@ def format_rank(dictionary, key) -> str:
     return rank
 
 def evaluate_rrf_with_llm(query: str, results: list[dict]):
+    formatted_results = format_results(results)
+        
+    rrf_evaluations: list[int] = evaluate_rrf(query, formatted_results)
+    print_rrf_evaluation(results, rrf_evaluations)
+    
+def format_results(results: list[dict]) -> list[str]:
     formatted_results: list[str] = []
     for result in results:
         doc = result["document"]
         formatted_results.append(f"{doc["title"]}: {doc["description"]}")
-        
-    rrf_evaluations: list[int] = evaluate_rrf(query, formatted_results)
-    print_rrf_evaluation(results, rrf_evaluations)
+    
+    return formatted_results
     
 def print_rrf_evaluation(results: list[dict], rrf_evaluations: list[int]):
     if len(results) != len(rrf_evaluations):
