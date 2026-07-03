@@ -71,3 +71,9 @@ def format_search_result(
         "score": round(score, SCORE_PRECISION),
         "metadata": metadata if metadata else {},
     }
+    
+def texts_from_documents(docs: list[dict]) -> list[str]:
+    return list(map(text_from_document, docs))
+    
+def text_from_document(doc: dict) -> str:
+    return f"{doc['title']}: {doc['description']}"
